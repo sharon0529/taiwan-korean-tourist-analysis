@@ -34,6 +34,7 @@ models:
           - not_null
           - accepted_values:
               values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+              quote: false
 
       - name: currency_original
         description: 受訪者回報消費金額的幣別
@@ -52,6 +53,7 @@ models:
         tests:
           - accepted_values:
               values: [1, 2]
+              quote: false
 
       - name: stay_nights
         description: 停留夜數，最小值為 1
@@ -281,3 +283,4 @@ models:
           - not_null
           - accepted_values:
               values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+              quote: false

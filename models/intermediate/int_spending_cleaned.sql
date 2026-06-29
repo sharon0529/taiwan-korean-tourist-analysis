@@ -41,15 +41,15 @@ joined as (
 
 ),
 
--- 計算 99 百分位數，用於離群值標記
+-- BigQuery 寫法：percentile_cont 是 analytic function，需用 subquery 取單一值
 percentiles as (
 
-    select
-        percentile_cont(0.99) within group (
-            order by total_spend_twd
-        ) as p99_total_spend
-
-    from joined
+    select max(p99) as p99_total_spend
+    from (
+        select percentile_cont(total_spend_twd, 0.99) over () as p99
+        from joined
+        limit 1
+    )
 
 ),
 
@@ -59,7 +59,6 @@ final as (
         j.*,
 
         -- ── 離群值標記 ────────────────────────────────────
-        -- 超過 99 百分位視為異常高消費，標記但不刪除
         case when j.total_spend_twd > p.p99_total_spend
             then true else false
         end                             as is_outlier,
@@ -67,31 +66,29 @@ final as (
         p.p99_total_spend,
 
         -- ── 人均日支出 ────────────────────────────────────
-        -- 防呆：stay_nights = 0 或 null 時 fallback 為 1，避免除以零
         round(
-            j.total_spend_twd::numeric
+            cast(j.total_spend_twd as numeric)
             / nullif(j.stay_nights, 0),
         0)                              as spend_per_day_twd,
 
         -- ── 消費結構比例 ──────────────────────────────────
-        -- 各項支出佔總支出比例（Looker Studio 圓餅圖用）
         case when j.total_spend_twd > 0
-            then round(j.hotel_spend_twd::numeric       / j.total_spend_twd * 100, 1)
+            then round(cast(j.hotel_spend_twd as numeric)    / j.total_spend_twd * 100, 1)
             else 0
         end                             as hotel_spend_pct,
 
         case when j.total_spend_twd > 0
-            then round(j.food_spend_twd::numeric        / j.total_spend_twd * 100, 1)
+            then round(cast(j.food_spend_twd as numeric)     / j.total_spend_twd * 100, 1)
             else 0
         end                             as food_spend_pct,
 
         case when j.total_spend_twd > 0
-            then round(j.shopping_spend_twd::numeric    / j.total_spend_twd * 100, 1)
+            then round(cast(j.shopping_spend_twd as numeric) / j.total_spend_twd * 100, 1)
             else 0
         end                             as shopping_spend_pct,
 
         case when j.total_spend_twd > 0
-            then round(j.transport_spend_twd::numeric   / j.total_spend_twd * 100, 1)
+            then round(cast(j.transport_spend_twd as numeric)/ j.total_spend_twd * 100, 1)
             else 0
         end                             as transport_spend_pct
 
