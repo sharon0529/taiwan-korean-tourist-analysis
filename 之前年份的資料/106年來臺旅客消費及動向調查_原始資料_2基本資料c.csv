@@ -1,0 +1,12 @@
+﻿name,title
+id,樣本編號  (nominal)
+nation,國籍  (nominal)
+resid,居住地  (nominal)
+age,年齡  (ordinal)
+income,年收入(美元) (ordinal)
+educ,最高學歷  (ordinal)
+occup,工作別  (nominal)
+gender,性別  (nominal)
+area,調查區  (nominal)
+nation_o,國籍_原始  (nominal)
+resid_o,居住地_原始(nominal)

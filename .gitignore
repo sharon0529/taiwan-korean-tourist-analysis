@@ -1,0 +1,17 @@
+# dbt
+target/
+dbt_packages/
+logs/
+.user.yml
+
+# 個人設定（含 BigQuery 金鑰，絕對不能上傳）
+profiles.yml
+*.json
+service_account*.json
+
+# 原始資料（檔案太大，不上傳）
+data/*.csv
+
+# 系統檔
+.DS_Store
+Thumbs.db

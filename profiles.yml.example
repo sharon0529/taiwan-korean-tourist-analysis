@@ -1,0 +1,10 @@
+korean_tourist_analysis:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: oauth
+      project: your-bigquery-project-id   # 替換成你的 project ID
+      dataset: dbt_chou                    # 替換成你的 dataset
+      threads: 4
+      timeout_seconds: 300

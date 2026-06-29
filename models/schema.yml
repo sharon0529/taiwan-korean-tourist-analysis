@@ -1,0 +1,283 @@
+# models/schema.yml
+#
+# 定義所有 model 的欄位說明與 dbt tests。
+# 執行：dbt test
+#
+# Tests 說明：
+#   - unique       : 確認主鍵不重複
+#   - not_null     : 確認關鍵欄位無空值
+#   - accepted_values: 確認 code 欄位只有合法值
+#   - relationships: 確認 FK 在對應 dim table 存在（參照完整性）
+
+version: 2
+
+models:
+
+  # ════════════════════════════════════════════
+  # STAGING
+  # ════════════════════════════════════════════
+
+  - name: stg_korean_tourists
+    description: >
+      韓國旅客原始資料清洗層（nation = 3）。
+      共 831 筆，欄位已 rename，消費欄位帶 _raw 後綴表示尚未換算幣別。
+    columns:
+      - name: tourist_id
+        description: 樣本唯一識別碼
+        tests:
+          - unique
+          - not_null
+
+      - name: survey_month
+        description: 調查月份，1-12
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+      - name: currency_original
+        description: 受訪者回報消費金額的幣別
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['新台幣', '韓元', '美元', '日圓']
+
+      - name: total_spend_raw
+        description: 在台總支出（原始幣別，未換算）
+        tests:
+          - not_null
+
+      - name: gender_code
+        description: 性別代碼，1=男, 2=女
+        tests:
+          - accepted_values:
+              values: [1, 2]
+
+      - name: stay_nights
+        description: 停留夜數，最小值為 1
+        tests:
+          - not_null
+
+  - name: stg_spending
+    description: >
+      消費金額幣別換算層。
+      所有消費欄位已依固定匯率換算為新台幣（TWD）。
+      匯率：韓元 × 0.023、美元 × 32.5、日圓 × 0.21。
+    columns:
+      - name: tourist_id
+        description: 樣本唯一識別碼
+        tests:
+          - unique
+          - not_null
+
+      - name: currency_original
+        description: 原始幣別
+        tests:
+          - not_null
+
+      - name: fx_rate
+        description: 換算匯率係數
+        tests:
+          - not_null
+
+      - name: total_spend_twd
+        description: 在台總支出（台幣）
+        tests:
+          - not_null
+
+  # ════════════════════════════════════════════
+  # INTERMEDIATE
+  # ════════════════════════════════════════════
+
+  - name: int_tourist_profile
+    description: >
+      人口統計 code 解碼層。
+      將數字代碼轉換為中文文字標籤，code 與 label 並存。
+    columns:
+      - name: tourist_id
+        description: 樣本唯一識別碼
+        tests:
+          - unique
+          - not_null
+
+      - name: age_group
+        description: 年齡區間文字標籤
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['12-19歲', '20-29歲', '30-39歲', '40-49歲',
+                       '50-59歲', '60-64歲', '65-69歲', '未知']
+
+      - name: gender
+        description: 性別文字標籤
+        tests:
+          - accepted_values:
+              values: ['男性', '女性', '未知']
+
+      - name: primary_purpose
+        description: 來台主要目的文字標籤
+        tests:
+          - accepted_values:
+              values: ['觀光', '業務', '國際會議/展覽', '探親訪友', '其他', '未知']
+
+      - name: satisfaction_label
+        description: 整體滿意度文字標籤
+        tests:
+          - accepted_values:
+              values: ['非常不滿意', '不滿意', '普通', '滿意', '非常滿意', '未知']
+
+  - name: int_trip_behavior
+    description: >
+      旅遊行為整合層。
+      旅遊型態、住宿、活動、交通 code 轉文字，
+      並衍生 is_independent_traveler、is_repeat_visitor、activity_count。
+    columns:
+      - name: tourist_id
+        description: 樣本唯一識別碼
+        tests:
+          - unique
+          - not_null
+
+      - name: travel_type
+        description: 旅遊安排方式文字標籤
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['旅行社包辦團', '自訂行程-旅行社包辦',
+                       '自訂行程-旅行社訂住宿', '自訂-抵台後參加OTA',
+                       '完全自訂', '未知']
+
+      - name: stay_group
+        description: 停留天數分組
+        tests:
+          - accepted_values:
+              values: ['1-3晚', '4-6晚', '7-10晚', '10晚以上']
+
+      - name: activity_count
+        description: 參與活動總數，0-7
+        tests:
+          - not_null
+
+  - name: int_spending_cleaned
+    description: >
+      消費資料清洗與衍生指標層。
+      標記離群值（P99）、計算人均日支出、各項消費佔比。
+    columns:
+      - name: tourist_id
+        description: 樣本唯一識別碼
+        tests:
+          - unique
+          - not_null
+
+      - name: total_spend_twd
+        description: 在台總支出（台幣）
+        tests:
+          - not_null
+
+      - name: spend_per_day_twd
+        description: 人均每日支出（台幣），total_spend_twd ÷ stay_nights
+
+      - name: is_outlier
+        description: 是否為離群值（超過 P99 總支出）
+
+  # ════════════════════════════════════════════
+  # MARTS
+  # ════════════════════════════════════════════
+
+  - name: dim_tourist
+    description: 人口統計維度表，每列代表一位旅客的靜態屬性。
+    columns:
+      - name: tourist_key
+        description: Surrogate key（hash，由 tourist_id 產生）
+        tests:
+          - unique
+          - not_null
+
+      - name: tourist_id
+        description: 自然鍵
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_trip
+    description: 旅遊行為維度表，涵蓋旅遊型態、住宿、活動、交通。
+    columns:
+      - name: trip_key
+        description: Surrogate key
+        tests:
+          - unique
+          - not_null
+
+      - name: tourist_id
+        description: 自然鍵
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_spending_detail
+    description: 消費細項維度表，含各類支出金額、佔比與離群值標記。
+    columns:
+      - name: spending_key
+        description: Surrogate key
+        tests:
+          - unique
+          - not_null
+
+      - name: tourist_id
+        description: 自然鍵
+        tests:
+          - unique
+          - not_null
+
+      - name: total_spend_twd
+        description: 在台總支出（台幣）
+        tests:
+          - not_null
+
+  - name: fct_korean_tourist_spending
+    description: >
+      韓國旅客消費行為 Fact table。
+      Grain：一列 = 一位受訪旅客。
+      Join 所有 dim tables，為 Looker Studio 的主要資料來源。
+    columns:
+      - name: tourist_id
+        description: 主鍵，一位旅客唯一一筆
+        tests:
+          - unique
+          - not_null
+
+      - name: tourist_key
+        description: FK → dim_tourist.tourist_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_tourist')
+              field: tourist_key
+
+      - name: trip_key
+        description: FK → dim_trip.trip_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_trip')
+              field: trip_key
+
+      - name: spending_key
+        description: FK → dim_spending_detail.spending_key
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_spending_detail')
+              field: spending_key
+
+      - name: total_spend_twd
+        description: 在台總支出（台幣），核心 measure
+        tests:
+          - not_null
+
+      - name: survey_month
+        description: 調查月份，1-12，用於月趨勢分析
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]

@@ -1,0 +1,73 @@
+# models/staging/sources.yml
+#
+# 定義原始資料來源，讓 dbt lineage graph 顯示完整的資料流：
+# BigQuery raw table → staging → intermediate → marts
+
+version: 2
+
+sources:
+  - name: taiwan_tourism
+    description: >
+      台灣觀光署「113年來臺旅客消費及動向調查」原始資料。
+      每列代表一位受訪旅客，共 6,620 筆、239 個欄位。
+      資料載點：Taiwan Tourism Administration 官方調查。
+    database: your_bigquery_project   # 替換成你的 BigQuery project ID
+    schema: raw                        # 替換成你的 raw dataset 名稱
+
+    tables:
+      - name: raw_tourist_survey_113
+        description: >
+          113年來臺旅客消費及動向調查原始 CSV 上傳至 BigQuery 的對應表。
+          本專案只使用 nation = 3（韓國旅客）的資料列，共 831 筆。
+
+        columns:
+          - name: ID
+            description: 樣本編號，7碼唯一識別碼（nominal）
+            tests:
+              - unique
+              - not_null
+
+          - name: mon
+            description: 調查配置月份，1-12（nominal）
+            tests:
+              - not_null
+              - accepted_values:
+                  values: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+
+          - name: nation
+            description: >
+              國籍代碼（nominal）。
+              本專案篩選 nation = 3（韓國）。
+              完整對照表見問卷附件一。
+            tests:
+              - not_null
+
+          - name: stay
+            description: 停留夜數（ratio），以夜為單位
+            tests:
+              - not_null
+
+          - name: money
+            description: 在台灣期間總支出（ratio），幣別見 dollar 欄位
+            tests:
+              - not_null
+
+          - name: dollar
+            description: 總支出幣別（新台幣 / 韓元 / 美元 / 日圓等）
+            tests:
+              - not_null
+
+          - name: gender
+            description: 性別，1=男性, 2=女性（nominal）
+            tests:
+              - accepted_values:
+                  values: [1, 2]
+
+          - name: age
+            description: >
+              年齡區間代碼（nominal）。
+              1=12-19, 2=20-29, 3=30-39, 4=40-49,
+              5=50-59, 6=60-64, 7=65-69, 8=70以上
+            tests:
+              - accepted_values:
+                  values: [0, 1, 2, 3, 4, 5, 6, 7, 8]

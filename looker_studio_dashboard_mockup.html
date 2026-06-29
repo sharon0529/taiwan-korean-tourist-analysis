@@ -1,0 +1,184 @@
+
+<style>
+.db-wrap{padding:16px 0;font-family:var(--font-sans)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.kpi{background:var(--surface-1);border-radius:10px;padding:14px 16px}
+.kpi-label{font-size:11px;color:var(--text-muted);margin-bottom:6px;letter-spacing:.03em}
+.kpi-value{font-size:22px;font-weight:500;color:var(--text-primary);line-height:1}
+.kpi-sub{font-size:11px;color:var(--text-secondary);margin-top:4px}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+.chart-card{background:var(--surface-1);border-radius:10px;padding:14px 16px}
+.chart-title{font-size:12px;font-weight:500;color:var(--text-secondary);margin-bottom:12px}
+.full-card{background:var(--surface-1);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.legend-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-secondary)}
+.legend-sq{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.filter-row{display:flex;gap:8px;margin-bottom:14px;align-items:center}
+.filter-label{font-size:11px;color:var(--text-muted)}
+select{font-size:12px;padding:4px 8px;border-radius:var(--radius);border:0.5px solid var(--border-strong);background:var(--surface-2);color:var(--text-primary);cursor:pointer}
+</style>
+<div class="db-wrap">
+  <h2 class="sr-only">韓國旅客消費行為分析 Looker Studio Dashboard mockup</h2>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div>
+      <div style="font-size:15px;font-weight:500;color:var(--text-primary)">韓國旅客在台消費行為分析</div>
+      <div style="font-size:11px;color:var(--text-muted)">113年來臺旅客消費及動向調查 · 韓國旅客 N=822（排除離群值）</div>
+    </div>
+    <div class="filter-row" style="margin:0">
+      <span class="filter-label">月份</span>
+      <select id="sel-month"><option value="all">全年</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option></select>
+      <span class="filter-label">旅遊型態</span>
+      <select id="sel-type"><option value="all">全部</option><option>散客</option><option>團客</option></select>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">平均總支出</div>
+      <div class="kpi-value" id="kpi-avg">NT$20,875</div>
+      <div class="kpi-sub">中位數 NT$16,680</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">人均日支出</div>
+      <div class="kpi-value">NT$5,219</div>
+      <div class="kpi-sub">平均停留 4.0 晚</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">最大消費項目</div>
+      <div class="kpi-value" style="font-size:18px">旅館支出</div>
+      <div class="kpi-sub">平均 NT$5,376（26%）</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">會再訪旅客</div>
+      <div class="kpi-value">87%</div>
+      <div class="kpi-sub">推薦意願 91%</div>
+    </div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">消費金額區間分布</div>
+      <div style="position:relative;height:180px"><canvas id="c-hist" role="img" aria-label="長條圖：韓國旅客消費金額區間分布，1萬以下229人，1-3萬411人，3-6萬159人，6-10萬23人">消費區間：1萬以下229人，1-3萬411人，3-6萬159人，6-10萬23人</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">消費結構（各項平均支出）</div>
+      <div class="legend-row" id="donut-legend"></div>
+      <div style="position:relative;height:150px"><canvas id="c-donut" role="img" aria-label="圓餅圖：韓國旅客消費結構，旅館26%餐飲26%購物25%交通11%娛樂9%雜費3%">旅館26%，餐飲26%，購物25%，交通11%，娛樂9%，雜費3%</canvas></div>
+    </div>
+  </div>
+
+  <div class="full-card">
+    <div class="chart-title">各月份消費趨勢（平均總支出 NT$）</div>
+    <div style="position:relative;height:160px"><canvas id="c-line" role="img" aria-label="折線圖：各月份韓國旅客平均總支出趨勢">月份趨勢：1月16,562、2月20,902、3月20,582、4月19,120、5月16,434、6月17,348、7月21,497、8月29,227、9月28,329、10月22,830、11月24,513、12月24,405</canvas></div>
+  </div>
+
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-title">年齡層 vs 平均支出</div>
+      <div style="position:relative;height:180px"><canvas id="c-age" role="img" aria-label="橫條圖：各年齡層韓國旅客平均支出">年齡層支出比較</canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">旅遊型態 vs 平均支出</div>
+      <div style="position:relative;height:180px"><canvas id="c-type" role="img" aria-label="橫條圖：旅遊型態與平均支出比較">旅遊型態支出比較</canvas></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+const gridColor = isDark ? '#2c2c2a' : '#e1e0d9';
+const textMuted = isDark ? '#898781' : '#898781';
+const textSec = isDark ? '#c3c2b7' : '#52514e';
+const blue = '#2a78d6';
+const teal = '#1baf7a';
+
+const baseOpts = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' NT$' + ctx.parsed.y?.toLocaleString() || '' } } },
+  scales: {
+    x: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 11 } } },
+    y: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 11 }, callback: v => 'NT$' + (v/1000).toFixed(0) + 'k' } }
+  }
+};
+
+new Chart(document.getElementById('c-hist'), {
+  type: 'bar',
+  data: {
+    labels: ['1萬以下','1-3萬','3-6萬','6-10萬'],
+    datasets: [{ data: [229, 411, 159, 23], backgroundColor: blue, borderRadius: 4, borderSkipped: false }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' ' + ctx.parsed.y + ' 人' } } },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 11 } } },
+      y: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 11 } }, title: { display: true, text: '旅客人數', color: textSec, font: { size: 11 } } }
+    }
+  }
+});
+
+const donutColors = [blue, teal, '#eda100', '#4a3aa7', '#e34948', '#888780'];
+const donutLabels = ['旅館','餐飲','購物','交通','娛樂','雜費'];
+const donutData = [5376, 5307, 5055, 2231, 1874, 1033];
+const total = donutData.reduce((a,b)=>a+b,0);
+const legend = document.getElementById('donut-legend');
+donutLabels.forEach((l,i) => {
+  const pct = Math.round(donutData[i]/total*100);
+  legend.innerHTML += `<span class="legend-item"><span class="legend-sq" style="background:${donutColors[i]}"></span>${l} ${pct}%</span>`;
+});
+new Chart(document.getElementById('c-donut'), {
+  type: 'doughnut',
+  data: { labels: donutLabels, datasets: [{ data: donutData, backgroundColor: donutColors, borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#f5f5f3' }] },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '62%',
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' NT$' + ctx.parsed.toLocaleString() } } }
+  }
+});
+
+new Chart(document.getElementById('c-line'), {
+  type: 'line',
+  data: {
+    labels: ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'],
+    datasets: [{
+      data: [16562,20902,20582,19120,16434,17348,21497,29227,28329,22830,24513,24405],
+      borderColor: blue, backgroundColor: isDark ? 'rgba(42,120,214,0.08)' : 'rgba(42,120,214,0.08)',
+      borderWidth: 2, pointRadius: 3, pointBackgroundColor: blue, fill: true, tension: 0.3
+    }]
+  },
+  options: { ...baseOpts, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' NT$' + ctx.parsed.y.toLocaleString() } } } }
+});
+
+new Chart(document.getElementById('c-age'), {
+  type: 'bar',
+  data: {
+    labels: ['12-19歲','20-29歲','30-39歲','40-49歲','50-59歲','60-64歲','65-69歲'],
+    datasets: [{ data: [17348,23263,23916,19131,21519,12261,14945], backgroundColor: teal, borderRadius: 4, borderSkipped: false }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' NT$' + ctx.parsed.x.toLocaleString() } } },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 10 }, callback: v => 'NT$' + (v/1000).toFixed(0) + 'k' } },
+      y: { grid: { display: false }, ticks: { color: textMuted, font: { size: 10 } } }
+    }
+  }
+});
+
+new Chart(document.getElementById('c-type'), {
+  type: 'bar',
+  data: {
+    labels: ['自訂+OTA','完全自訂','旅行社訂住宿','旅行社包辦團','自訂-旅行社包辦'],
+    datasets: [{ data: [30900,26620,13668,10806,10678], backgroundColor: '#eda100', borderRadius: 4, borderSkipped: false }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ' NT$' + ctx.parsed.x.toLocaleString() } } },
+    scales: {
+      x: { grid: { color: gridColor }, ticks: { color: textMuted, font: { size: 10 }, callback: v => 'NT$' + (v/1000).toFixed(0) + 'k' } },
+      y: { grid: { display: false }, ticks: { color: textMuted, font: { size: 10 } } }
+    }
+  }
+});
+</script>
